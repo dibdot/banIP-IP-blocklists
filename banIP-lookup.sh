@@ -78,7 +78,7 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
-		hold=$((cnt % 10000))
+		hold=$((cnt % 8000))
 		[ "${hold}" = "0" ] && wait
 		cnt=$((cnt + 1))
 	done <"./${input}"
