@@ -27,7 +27,7 @@ fi
 
 for domain in ${check_domains}; do
 	for resolver in ${upstream}; do
-		out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer 2>/dev/null)"
+		out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
 		if [ -z "${out}" ]; then
 			printf "%s\n" "ERR: domain pre-check failed"
 			exit 1
@@ -78,7 +78,7 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
-		hold=$((cnt % 1000))
+		hold=$((cnt % 10000))
 		[ "${hold}" = "0" ] && wait
 		cnt=$((cnt + 1))
 	done <"./${input}"
