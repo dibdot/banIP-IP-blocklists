@@ -44,8 +44,7 @@ done
 # download domains/host files
 #
 feeds="https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.txt
-	https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt
-	https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_full.txt"
+		https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt"
 for feed in ${feeds}; do
 	printf "%s\n" "$(date +%D-%T) ::: Start processing '${feed}' ..."
 	: >"./${input}"
@@ -78,7 +77,7 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
-		hold=$((cnt % 8000))
+		hold=$((cnt % 9000))
 		[ "${hold}" = "0" ] && wait
 		cnt=$((cnt + 1))
 	done <"./${input}"
