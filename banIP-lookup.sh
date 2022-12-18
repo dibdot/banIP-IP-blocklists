@@ -47,6 +47,7 @@ feeds="https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.txt
 	https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt
 	https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_full.txt"
 for feed in ${feeds}; do
+	printf "%s\n" "$(date +%D-%T) ::: Start processing '${feed}' ..."
 	: >"./${input}"
 	: >"./ipv4.tmp"
 	: >"./ipv6.tmp"
@@ -77,7 +78,7 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
-		hold=$((cnt % 5000))
+		hold=$((cnt % 1000))
 		[ "${hold}" = "0" ] && wait
 		cnt=$((cnt + 1))
 	done <"./${input}"
@@ -95,4 +96,5 @@ for feed in ${feeds}; do
 	sort -b -u -n -t. -k1,1 -k2,2 -k3,3 -k4,4 "./ipv4.tmp" >"./${output}-ipv4.txt"
 	sort -b -u -k1,1 "./ipv6.tmp" >"./${output}-ipv6.txt"
 	rm "./ipv4.tmp" "./ipv6.tmp" "./${input}"
+	printf "%s\n" "$(date +%D-%T) ::: Finished processing '${feed}'"
 done
