@@ -64,7 +64,7 @@ for feed in ${feeds}; do
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}')"
 				if [ -n "${ips}" ]; then
 					for ip in ${ips}; do
-						if [ "${ip%%.*}" = "0" ] || [ "${ip}" = "::" ] || [ "${ip}" = "1.1.1.1" ] || [ "${ip}" = "8.8.8.8" ]; then
+						if [ "${ip%%.*}" = "0" ] || [ -z "${ip%%::*}" ] || [ "${ip}" = "1.1.1.1" ] || [ "${ip}" = "8.8.8.8" ]; then
 							continue
 						else
 							if [ -n "$(printf "%s" "${ip}" | "${awk_tool}" '/^(([0-9]{1,3}\.){3}[0-9]{1,3}(\/[0-9]{1,2})?)([[:space:]]|$)/{print $1}')" ]; then
