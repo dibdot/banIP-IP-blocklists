@@ -47,7 +47,8 @@ done
 feeds="oisdbasic_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.txt
 		oisdnsfw_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt
 		stevenblack_https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-		yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext"
+		yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext
+		adguard_https://raw.githubusercontent.com/AdguardTeam/AdguardFilters/master/BaseFilter/sections/adservers.txt"
 
 for feed in ${feeds}; do
 	feed_name="${feed%%_*}"
@@ -56,7 +57,7 @@ for feed in ${feeds}; do
 	: >"./${input}"
 	: >"./ipv4.tmp"
 	: >"./ipv6.tmp"
-	curl "${feed_url}" --connect-timeout 20 --fail --silent --show-error --location | "${awk_tool}" 'BEGIN{RS="([[:alnum:]_-]{1,63}\\.)+[[:alpha:]]+"}{if(!seen[RT]++)printf "%s\n",tolower(RT)}' >"./${input}"
+	curl "${feed_url}" --connect-timeout 20 --fail --silent --show-error --location | "${awk_tool}" 'BEGIN{RS="([[:alnum:]_-]{1,63}\\.)+[[:alpha:]]+"}!/^[[:space:]]*[#|!]/{if(!seen[RT]++)printf "%s\n",tolower(RT)}' >"./${input}"
 
 	# domain processing
 	#
