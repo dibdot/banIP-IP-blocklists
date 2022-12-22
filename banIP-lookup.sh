@@ -1,7 +1,7 @@
 #!/bin/sh
 # banIP-lookup - retrieve IPv4/IPv6 addresses via dig from downloaded domain lists
 # and write the adjusted output to separate lists (IPv4/IPv6 addresses plus domains)
-# Copyright (c) 2022 Dirk Brenken (dev@brenken.org)
+# Copyright (c) 2022-2023 Dirk Brenken (dev@brenken.org)
 #
 # This is free software, licensed under the GNU General Public License v3.
 
@@ -17,6 +17,7 @@ awk_tool="$(command -v awk)"
 check_domains="google.com heise.de openwrt.org"
 upstream="1.1.1.1"
 input="input.txt"
+update="false"
 
 # sanity pre-checks
 #
@@ -32,7 +33,7 @@ for domain in ${check_domains}; do
 			printf "%s\n" "ERR: domain pre-check failed"
 			exit 1
 		else
-			ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}')"
+			ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 			if [ -z "${ips}" ]; then
 				printf "%s\n" "ERR: ip pre-check failed"
 				exit 1
@@ -43,16 +44,19 @@ done
 
 # download domains/host files
 #
-feeds="https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.txt
-		https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt"
+feeds="oisdbasic_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.txt
+		oisdnsfw_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt
+		stevenblack_https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+		yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext"
+
 for feed in ${feeds}; do
-	printf "%s\n" "$(date +%D-%T) ::: Start processing '${feed}' ..."
+	feed_name="${feed%%_*}"
+	feed_url="${feed#*_}"
+	printf "%s\n" "$(date +%D-%T) ::: Start processing '${feed_name}' ..."
 	: >"./${input}"
 	: >"./ipv4.tmp"
 	: >"./ipv6.tmp"
-	output="${feed##*/}"
-	output="${output%.*}"
-	curl "${feed}" --connect-timeout 20 --fail --silent --show-error --location | awk '/^([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+([[:space:]]|$)/{print tolower($1)}' | sort -u >./input.txt
+	curl "${feed_url}" --connect-timeout 20 --fail --silent --show-error --location | "${awk_tool}" 'BEGIN{RS="([[:alnum:]_-]{1,63}\\.)+[[:alpha:]]+"}{if(!seen[RT]++)printf "%s\n",tolower(RT)}' >"./${input}"
 
 	# domain processing
 	#
@@ -61,13 +65,13 @@ for feed in ${feeds}; do
 		(
 			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
 			if [ -n "${out}" ]; then
-				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}')"
+				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then
 					for ip in ${ips}; do
 						if [ "${ip%%.*}" = "0" ] || [ -z "${ip%%::*}" ] || [ "${ip}" = "1.1.1.1" ] || [ "${ip}" = "8.8.8.8" ]; then
 							continue
 						else
-							if [ -n "$(printf "%s" "${ip}" | "${awk_tool}" '/^(([0-9]{1,3}\.){3}[0-9]{1,3}(\/[0-9]{1,2})?)([[:space:]]|$)/{print $1}')" ]; then
+							if [ -n "$(printf "%s" "${ip}" | "${awk_tool}" '/^(([0-9]{1,3}\.){3}[0-9]{1,3}(\/[0-9]{1,2})?)([[:space:]]|$)/{print $1}' 2>/dev/null)" ]; then
 								printf "%-20s%s\n" "${ip}" "# ${domain}" >>./ipv4.tmp
 							else
 								printf "%-40s%s\n" "${ip}" "# ${domain}" >>./ipv6.tmp
@@ -86,14 +90,18 @@ for feed in ${feeds}; do
 	# sanity re-checks
 	#
 	if [ ! -s "./ipv4.tmp" ] || [ ! -s "./ipv6.tmp" ]; then
-		printf "%s\n" "ERR: general re-check failed"
-		exit 1
+		printf "%s\n" "ERR: '${feed_name}' re-check failed"
+		continue
 	fi
 
 	# final sort/merge step
 	#
-	sort -b -u -n -t. -k1,1 -k2,2 -k3,3 -k4,4 "./ipv4.tmp" >"./${output}-ipv4.txt"
-	sort -b -u -k1,1 "./ipv6.tmp" >"./${output}-ipv6.txt"
-	rm "./ipv4.tmp" "./ipv6.tmp" "./${input}"
-	printf "%s\n" "$(date +%D-%T) ::: Finished processing '${feed}'"
+	update="true"
+	sort -b -u -n -t. -k1,1 -k2,2 -k3,3 -k4,4 "./ipv4.tmp" >"./${feed_name}-ipv4.txt"
+	sort -b -u -k1,1 "./ipv6.tmp" >"./${feed_name}-ipv6.txt"
+	printf "%s\n" "$(date +%D-%T) ::: Finished processing '${feed_name}'"
 done
+if [ "${update}" = "false" ]; then
+	printf "%s\n" "ERR: general re-check failed"
+	exit 1
+fi
