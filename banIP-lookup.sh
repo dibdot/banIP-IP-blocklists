@@ -49,7 +49,7 @@ feeds="oisdbasic_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.tx
 		stevenblack_https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
 		yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext
 		adguard_https://raw.githubusercontent.com/AdguardTeam/AdguardFilters/master/BaseFilter/sections/adservers.txt"
-cnt=1
+
 for feed in ${feeds}; do
 	feed_name="${feed%%_*}"
 	feed_url="${feed#*_}"
@@ -61,6 +61,7 @@ for feed in ${feeds}; do
 
 	# domain processing
 	#
+	cnt=1
 	while IFS= read -r domain; do
 		(
 			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=3 2>/dev/null)"
@@ -81,8 +82,10 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
+		echo "DEBUG: $cnt"
 		hold=$((cnt % 8000))
-		[ "${hold}" = "0" ] && { wait; cnt="1"; } || cnt="$((cnt + 1))"
+		[ "${hold}" =  "0" ] && { wait; cnt="1"; }
+		cnt="$((cnt + 1))"
 	done <"./${input}"
 	wait
 
