@@ -83,9 +83,8 @@ for feed in ${feeds}; do
 			fi
 		) &
 		echo "DEBUG: $cnt"
-		hold=$((cnt % 8000))
-		[ "${hold}" =  "0" ] && { wait; cnt="1"; }
-		cnt="$((cnt + 1))"
+		hold=$((cnt % 3000))
+		[ "${hold}" =  "0" ] && { wait; cnt="1"; } || cnt="$((cnt + 1))"
 	done <"./${input}"
 	wait
 
