@@ -61,7 +61,7 @@ for feed in ${feeds}; do
 
 	# domain processing
 	#
-	cnt=0
+	cnt=1
 	while IFS= read -r domain; do
 		(
 			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=3 2>/dev/null)"
@@ -82,7 +82,7 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
-		hold=$((cnt % 5000))
+		hold=$((cnt % 1000))
 		[ "${hold}" = "0" ] && { wait; cnt="1"; } || cnt="$((cnt + 1))"
 	done <"./${input}"
 	wait
