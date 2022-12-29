@@ -64,7 +64,7 @@ for feed in ${feeds}; do
 	cnt=1
 	while IFS= read -r domain; do
 		(
-			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=3 2>/dev/null)"
+			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=10 +tries=1 2>/dev/null)"
 			if [ -n "${out}" ]; then
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then
@@ -83,7 +83,7 @@ for feed in ${feeds}; do
 			fi
 		) &
 		echo "DEBUG: $cnt"
-		hold=$((cnt % 3000))
+		hold=$((cnt % 8000))
 		[ "${hold}" =  "0" ] && { wait; cnt="1"; } || cnt="$((cnt + 1))"
 	done <"./${input}"
 	wait
@@ -92,7 +92,7 @@ for feed in ${feeds}; do
 	#
 	if [ ! -s "./ipv4.tmp" ] || [ ! -s "./ipv6.tmp" ]; then
 		printf "%s\n" "ERR: '${feed_name}' re-check failed"
-		continue
+		continueb
 	fi
 
 	# final sort/merge step
