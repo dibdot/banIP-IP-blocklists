@@ -64,7 +64,7 @@ for feed in ${feeds}; do
 	cnt=0
 	while IFS= read -r domain; do
 		(
-			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
+			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=3 2>/dev/null)"
 			if [ -n "${out}" ]; then
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then
@@ -82,9 +82,8 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
-		hold=$((cnt % 9000))
-		[ "${hold}" = "0" ] && wait
-		cnt=$((cnt + 1))
+		hold=$((cnt % 5000))
+		[ "${hold}" = "0" ] && { wait; cnt="1"; } || cnt="$((cnt + 1))"
 	done <"./${input}"
 	wait
 
