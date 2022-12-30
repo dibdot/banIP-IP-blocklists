@@ -63,7 +63,6 @@ for feed in ${feeds}; do
 	#
 	cnt="1"
 	domain_cnt="0"
-	ip_cnt="0"
 	while IFS= read -r domain; do
 		(
 			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
@@ -75,7 +74,6 @@ for feed in ${feeds}; do
 							continue
 						else
 							if ipcalc-ng -cs "${ip}"; then
-								ip_cnt="$((ip_cnt + 1))"
 								if [ "${ip##*:}" = "${ip}" ]; then
 									printf "%-20s%s\n" "${ip}" "# ${domain}" >>./ipv4.tmp
 								else
@@ -87,13 +85,13 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
+		domain_cnt="$((domain_cnt + 1))"
 		hold="$((cnt % 2048))"
 		if [ "${hold}" = "0" ]; then
 			wait
 			cnt="1"
 		else
 			cnt="$((cnt + 1))"
-			domain_cnt="$((domain_cnt + 1))"
 		fi
 	done <"./${input}"
 	wait
@@ -112,8 +110,11 @@ for feed in ${feeds}; do
 	sort -b -u -k1,1 "./ipv6.tmp" >"./${feed_name}-ipv6.txt"
 	cnt_ipv4="$("${awk_tool}" 'END{printf "%d",NR}' "./${feed_name}-ipv4.txt" 2>/dev/null)"
 	cnt_ipv6="$("${awk_tool}" 'END{printf "%d",NR}' "./${feed_name}-ipv6.txt" 2>/dev/null)"
-	printf "%s\n" "$(date +%D-%T) ::: Finished processing '${feed_name}', domains: ${domain_cnt}, IPs: ${ip_cnt}, unique IPv4: ${cnt_ipv4}, unique IPv6: ${cnt_ipv6}"
+	printf "%s\n" "$(date +%D-%T) ::: Finished processing '${feed_name}', domains: ${domain_cnt}, unique IPv4: ${cnt_ipv4}, unique IPv6: ${cnt_ipv6}"
 done
+
+# error out
+#
 if [ "${update}" = "false" ]; then
 	printf "%s\n" "ERR: general re-check failed"
 	exit 1
