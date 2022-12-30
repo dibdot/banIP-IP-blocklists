@@ -27,29 +27,26 @@ if [ ! -x "${dig_tool}" ] || [ ! -x "${awk_tool}" ] || [ -z "${upstream}" ]; the
 fi
 
 for domain in ${check_domains}; do
-	for resolver in ${upstream}; do
-		out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
-		if [ -z "${out}" ]; then
-			printf "%s\n" "ERR: domain pre-check failed"
+	out="$("${dig_tool}" "@${upstream}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
+	if [ -z "${out}" ]; then
+		printf "%s\n" "ERR: domain pre-check failed"
+		exit 1
+	else
+		ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
+		if [ -z "${ips}" ]; then
+			printf "%s\n" "ERR: ip pre-check failed"
 			exit 1
-		else
-			ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
-			if [ -z "${ips}" ]; then
-				printf "%s\n" "ERR: ip pre-check failed"
-				exit 1
-			fi
 		fi
-	done
+	fi
 done
 
 # download domains/host files
 #
-feeds="yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext"
-#oisdbasic_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.txt
-#		oisdnsfw_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt
-#		stevenblack_https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-#		yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext
-#		adguard_https://raw.githubusercontent.com/AdguardTeam/AdguardFilters/master/BaseFilter/sections/adservers.txt"
+feeds="adguard_https://raw.githubusercontent.com/AdguardTeam/AdguardFilters/master/BaseFilter/sections/adservers.txt
+		yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext
+		stevenblack_https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+		oisdbasic_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.txt
+		oisdnsfw_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt"
 
 for feed in ${feeds}; do
 	feed_name="${feed%%_*}"
@@ -66,7 +63,7 @@ for feed in ${feeds}; do
 	domain_cnt="0"
 	while IFS= read -r domain; do
 		(
-			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
+			out="$("${dig_tool}" "@${upstream}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=5 2>/dev/null)"
 			if [ -n "${out}" ]; then
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then
@@ -76,9 +73,9 @@ for feed in ${feeds}; do
 						else
 							if ipcalc-ng -cs "${ip}"; then
 								if [ "${ip##*:}" = "${ip}" ]; then
-									printf "%-20s%s\n" "${ip}" "# ${domain}" >>./ipv4.tmp
+									printf "%-20s%s\n" "${ip}" "# ${domain}" >>"./ipv4.tmp"
 								else
-									printf "%-40s%s\n" "${ip}" "# ${domain}" >>./ipv6.tmp
+									printf "%-40s%s\n" "${ip}" "# ${domain}" >>"./ipv6.tmp"
 								fi
 							fi
 						fi
@@ -87,7 +84,7 @@ for feed in ${feeds}; do
 			fi
 		) &
 		domain_cnt="$((domain_cnt + 1))"
-		hold="$((cnt % 16))"
+		hold="$((cnt % 64))"
 		if [ "${hold}" = "0" ]; then
 			wait
 			cnt="1"
