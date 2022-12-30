@@ -73,7 +73,7 @@ for feed in ${feeds}; do
 						if [ "${ip%%.*}" = "0" ] || [ -z "${ip%%::*}" ] || [ "${ip}" = "1.1.1.1" ] || [ "${ip}" = "8.8.8.8" ]; then
 							continue
 						else
-							if [ "${ip//:/}" = "${ip}" ]; then
+							if [ "${ip##*:}" = "${ip}" ]; then
 								printf "%-20s%s\n" "${ip}" "# ${domain}" >>./ipv4.tmp
 							else
 								printf "%-40s%s\n" "${ip}" "# ${domain}" >>./ipv6.tmp
