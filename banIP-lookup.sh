@@ -84,7 +84,7 @@ for feed in ${feeds}; do
 			fi
 		) &
 		domain_cnt="$((domain_cnt + 1))"
-		hold="$((cnt % 128))"
+		hold="$((cnt % 32))"
 		if [ "${hold}" = "0" ]; then
 			wait
 			cnt="1"
