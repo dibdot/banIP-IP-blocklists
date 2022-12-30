@@ -61,10 +61,11 @@ for feed in ${feeds}; do
 
 	# domain processing
 	#
-	cnt=1
+	cnt="1"
+	domain_cnt="1"
 	while IFS= read -r domain; do
 		(
-			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=3 2>/dev/null)"
+			out="$("${dig_tool}" "@${resolver}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
 			if [ -n "${out}" ]; then
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then
@@ -72,7 +73,7 @@ for feed in ${feeds}; do
 						if [ "${ip%%.*}" = "0" ] || [ -z "${ip%%::*}" ] || [ "${ip}" = "1.1.1.1" ] || [ "${ip}" = "8.8.8.8" ]; then
 							continue
 						else
-							if [ -n "$(printf "%s" "${ip}" | "${awk_tool}" '/^(([0-9]{1,3}\.){3}[0-9]{1,3}(\/[0-9]{1,2})?)([[:space:]]|$)/{print $1}' 2>/dev/null)" ]; then
+							if [ "${ip//:/}" = "${ip}" ]; then
 								printf "%-20s%s\n" "${ip}" "# ${domain}" >>./ipv4.tmp
 							else
 								printf "%-40s%s\n" "${ip}" "# ${domain}" >>./ipv6.tmp
@@ -82,9 +83,14 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
-		echo "DEBUG: $cnt"
-		hold=$((cnt % 2048))
-		[ "${hold}" =  "0" ] && { wait; cnt="1"; } || cnt="$((cnt + 1))"
+		hold="$((cnt % 2048))"
+		if [ "${hold}" = "0" ]; then
+			wait
+			cnt="1"
+		else
+			cnt="$((cnt + 1))"
+			domain_cnt="$((domain_cnt + 1))"
+		fi
 	done <"./${input}"
 	wait
 
@@ -92,7 +98,7 @@ for feed in ${feeds}; do
 	#
 	if [ ! -s "./ipv4.tmp" ] || [ ! -s "./ipv6.tmp" ]; then
 		printf "%s\n" "ERR: '${feed_name}' re-check failed"
-		continueb
+		continue
 	fi
 
 	# final sort/merge step
@@ -100,7 +106,7 @@ for feed in ${feeds}; do
 	update="true"
 	sort -b -u -n -t. -k1,1 -k2,2 -k3,3 -k4,4 "./ipv4.tmp" >"./${feed_name}-ipv4.txt"
 	sort -b -u -k1,1 "./ipv6.tmp" >"./${feed_name}-ipv6.txt"
-	printf "%s\n" "$(date +%D-%T) ::: Finished processing '${feed_name}'"
+	printf "%s\n" "$(date +%D-%T) ::: Finished processing '${feed_name}', ${domain_cnt} domains"
 done
 if [ "${update}" = "false" ]; then
 	printf "%s\n" "ERR: general re-check failed"
