@@ -19,6 +19,10 @@ upstream="1.1.1.1"
 input="input.txt"
 update="false"
 
+test="$(ipcalc-ng --help 2>&1)"
+echo "$test"
+exit
+
 # sanity pre-checks
 #
 if [ ! -x "${dig_tool}" ] || [ ! -x "${awk_tool}" ] || [ -z "${upstream}" ]; then
