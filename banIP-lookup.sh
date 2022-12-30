@@ -44,11 +44,12 @@ done
 
 # download domains/host files
 #
-feeds="oisdbasic_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.txt
-		oisdnsfw_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt
-		stevenblack_https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-		yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext
-		adguard_https://raw.githubusercontent.com/AdguardTeam/AdguardFilters/master/BaseFilter/sections/adservers.txt"
+feeds="yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext"
+#oisdbasic_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.txt
+#		oisdnsfw_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt
+#		stevenblack_https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+#		yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext
+#		adguard_https://raw.githubusercontent.com/AdguardTeam/AdguardFilters/master/BaseFilter/sections/adservers.txt"
 
 for feed in ${feeds}; do
 	feed_name="${feed%%_*}"
@@ -86,7 +87,7 @@ for feed in ${feeds}; do
 			fi
 		) &
 		domain_cnt="$((domain_cnt + 1))"
-		hold="$((cnt % 2048))"
+		hold="$((cnt % 1000))"
 		if [ "${hold}" = "0" ]; then
 			wait
 			cnt="1"
@@ -108,9 +109,11 @@ for feed in ${feeds}; do
 	update="true"
 	sort -b -u -n -t. -k1,1 -k2,2 -k3,3 -k4,4 "./ipv4.tmp" >"./${feed_name}-ipv4.txt"
 	sort -b -u -k1,1 "./ipv6.tmp" >"./${feed_name}-ipv6.txt"
+	cnt_tmpv4="$("${awk_tool}" 'END{printf "%d",NR}' "./ipv4.tmp" 2>/dev/null)"
+	cnt_tmpv6="$("${awk_tool}" 'END{printf "%d",NR}' "./ipv6.tmp" 2>/dev/null)"
 	cnt_ipv4="$("${awk_tool}" 'END{printf "%d",NR}' "./${feed_name}-ipv4.txt" 2>/dev/null)"
 	cnt_ipv6="$("${awk_tool}" 'END{printf "%d",NR}' "./${feed_name}-ipv6.txt" 2>/dev/null)"
-	printf "%s\n" "$(date +%D-%T) ::: Finished processing '${feed_name}', domains: ${domain_cnt}, unique IPv4: ${cnt_ipv4}, unique IPv6: ${cnt_ipv6}"
+	printf "%s\n" "$(date +%D-%T) ::: Finished processing '${feed_name}', domains: ${domain_cnt}, all/unique IPv4: ${cnt_tmpv4}/${cnt_ipv4}, all/unique IPv6: ${cnt_tmpv6}/${cnt_ipv6}"
 done
 
 # error out
