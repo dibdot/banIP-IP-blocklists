@@ -43,10 +43,7 @@ done
 # download domains/host files
 #
 feeds="adguard_https://raw.githubusercontent.com/AdguardTeam/AdguardFilters/master/BaseFilter/sections/adservers.txt
-		yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext
-		stevenblack_https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-		oisdbasic_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_basic.txt
-		oisdnsfw_https://raw.githubusercontent.com/sjhgvr/oisd/main/dbl_nsfw.txt"
+		yoyo_https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext"
 
 for feed in ${feeds}; do
 	feed_name="${feed%%_*}"
@@ -63,7 +60,7 @@ for feed in ${feeds}; do
 	domain_cnt="0"
 	while IFS= read -r domain; do
 		(
-			out="$("${dig_tool}" "@${upstream}" "${domain}" A "${domain}" AAAA +noall +answer +time=10 +tries=5 2>/dev/null)"
+			out="$("${dig_tool}" "@${upstream}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
 			if [ -n "${out}" ]; then
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then

@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: banIP-update
+name: banIP-update_1
 
 # Controls when the workflow will run (on push, on schedule or manually)
 on:
@@ -28,8 +28,8 @@ jobs:
         run: sudo apt-get install -y ipcalc-ng
 
       # Runs a single command using the runners shell
-      - name: Run banIP lookup
-        run: sh ./banIP-lookup.sh
+      - name: Run banIP lookup_1
+        run: sh ./banIP-lookup_1.sh
 
       # Commit changed files to your repo
       - name: Git Auto Commit
