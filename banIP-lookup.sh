@@ -60,7 +60,7 @@ for feed in ${feeds}; do
 	domain_cnt="0"
 	while IFS= read -r domain; do
 		(
-			out="$("${dig_tool}" "@${upstream}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
+			out="$("${dig_tool}" "@${upstream}" "${domain}" A "${domain}" AAAA +noall +answer +time=10 +tries=1 2>/dev/null)"
 			if [ -n "${out}" ]; then
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then
@@ -77,15 +77,11 @@ for feed in ${feeds}; do
 							fi
 						fi
 					done
-				else
-					printf "%s\n" "ERR: no IPs, $domain"
 				fi
-			else
-				printf "%s\n" "ERR: no dig output, $domain"
 			fi
 		) &
 		domain_cnt="$((domain_cnt + 1))"
-		hold="$((cnt % 20))"
+		hold="$((cnt % 10))"
 		if [ "${hold}" = "0" ]; then
 			wait
 			cnt="1"
