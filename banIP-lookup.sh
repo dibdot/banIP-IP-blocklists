@@ -77,11 +77,15 @@ for feed in ${feeds}; do
 							fi
 						fi
 					done
+				else
+					printf "%s\n" "ERR: no IPs, $domain"
 				fi
+			else
+				printf "%s\n" "ERR: no dig output, $domain"
 			fi
 		) &
 		domain_cnt="$((domain_cnt + 1))"
-		hold="$((cnt % 32))"
+		hold="$((cnt % 20))"
 		if [ "${hold}" = "0" ]; then
 			wait
 			cnt="1"
