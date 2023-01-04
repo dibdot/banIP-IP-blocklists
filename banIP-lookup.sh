@@ -15,8 +15,8 @@ export PATH="/usr/sbin:/usr/bin:/sbin:/bin"
 dig_tool="$(command -v dig)"
 awk_tool="$(command -v awk)"
 check_domains="google.com heise.de openwrt.org"
-upstream1="1.1.1.1"
-upstream2="1.1.1.1"
+upstream1="8.8.8.8"
+upstream2="8.8.8.8"
 input1="input1.txt"
 input2="input2.txt"
 update="false"
@@ -68,7 +68,7 @@ for feed in ${feeds}; do
 	cnt="0"
 	while IFS= read -r domain; do
 		(
-			out="$("${dig_tool}" "@${upstream1}" "${domain}" A "${domain}" AAAA +noall +answer +time=20 +tries=1 2>/dev/null)"
+			out="$("${dig_tool}" "@${upstream1}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
 			if [ -n "${out}" ]; then
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then
@@ -90,9 +90,9 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
-		hold1="$((cnt % 512))"
+		hold1="$((cnt % 32))"
 		hold2="$((cnt % 2048))"
-		[ "${hold1}" = "0" ] && sleep 3
+		[ "${hold1}" = "0" ] && sleep 2
 		[ "${hold2}" = "0" ] && wait
 		cnt="$((cnt + 1))"
 	done <"./${input1}"
@@ -104,7 +104,7 @@ for feed in ${feeds}; do
 	cnt="0"
 	while IFS= read -r domain; do
 		(
-			out="$("${dig_tool}" "@${upstream2}" "${domain}" A "${domain}" AAAA +noall +answer +time=20 +tries=1 2>/dev/null)"
+			out="$("${dig_tool}" "@${upstream2}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
 			if [ -n "${out}" ]; then
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then
@@ -125,9 +125,9 @@ for feed in ${feeds}; do
 				fi
 			fi
 		) &
-		hold1="$((cnt % 512))"
+		hold1="$((cnt % 32))"
 		hold2="$((cnt % 2048))"
-		[ "${hold1}" = "0" ] && sleep 3
+		[ "${hold1}" = "0" ] && sleep 2
 		[ "${hold2}" = "0" ] && wait
 		cnt="$((cnt + 1))"
 	done <"./${input2}"
