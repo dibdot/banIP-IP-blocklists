@@ -91,7 +91,7 @@ for feed in ${feeds}; do
 			fi
 		) &
 		hold1="$((cnt % 512))"
-		hold2="$((cnt % 5000))"
+		hold2="$((cnt % 2048))"
 		[ "${hold1}" = "0" ] && sleep 3
 		[ "${hold2}" = "0" ] && wait
 		cnt="$((cnt + 1))"
@@ -126,7 +126,7 @@ for feed in ${feeds}; do
 			fi
 		) &
 		hold1="$((cnt % 512))"
-		hold2="$((cnt % 5000))"
+		hold2="$((cnt % 2048))"
 		[ "${hold1}" = "0" ] && sleep 3
 		[ "${hold2}" = "0" ] && wait
 		cnt="$((cnt + 1))"
