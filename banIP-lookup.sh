@@ -46,6 +46,7 @@ done
 #
 feeds='yoyo__https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=0&mimetype=plaintext__/^([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+([[:space:]]|$)/{printf"%s\n",tolower($1)}
 	adguard__https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt__BEGIN{FS="[\\|^|\\r]"}/^\|\|([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+[\/\^\\r]+$/{printf"%s\n",tolower($3)}
+	oisdbasic__https://raw.githubusercontent.com/sjhgvr/oisd/main/dblw_basic.txt__BEGIN{FS="\\*."}/^\*\.([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+([[:space:]]|$)/{printf"%s\n",tolower($2)}
 	stevenblack__https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts__/^0\.0\.0\.0[[:space:]]+([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+([[:space:]]|$)/{printf"%s\n",tolower($2)}'
 
 for feed in ${feeds}; do
@@ -59,7 +60,7 @@ for feed in ${feeds}; do
 	feed_url="${feed#*__}"
 	feed_url="${feed_url%__*}"
 	feed_regex="${feed##*__}"
-	feed_start="$(date "+%s")"
+	feed_start1="$(date "+%s")"
 	curl "${feed_url}" --connect-timeout 20 --fail --silent --show-error --location | "${awk_tool}" "${feed_regex}" >"./${input1}"
 	feed_cnt="$("${awk_tool}" 'END{printf "%d",NR}' "./${input1}" 2>/dev/null)"
 	printf "%s\n" "::: Start processing '${feed_name}', overall domains: ${feed_cnt}"
@@ -92,17 +93,20 @@ for feed in ${feeds}; do
 			fi
 		) &
 		hold1="$((cnt % 512))"
-		hold2="$((cnt % 2048))"
+		hold2="$((cnt % 4096))"
 		[ "${hold1}" = "0" ] && sleep 3
 		[ "${hold2}" = "0" ] && wait
 		cnt="$((cnt + 1))"
 	done <"./${input1}"
 	wait
 	error_cnt="$("${awk_tool}" 'END{printf "%d",NR}' "./${input2}" 2>/dev/null)"
-	printf "%s\n" "::: First run, processed domains: ${cnt}, error domains: ${error_cnt}"
+	feed_end="$(date "+%s")"
+	feed_duration="$(((feed_end - feed_start1) / 60))m $(((feed_end - feed_start1) % 60))s"
+	printf "%s\n" "::: First run, duration: ${feed_duration}, processed domains: ${cnt}, error domains: ${error_cnt}"
 
 	# domain processing (second run)
 	#
+	feed_start2="$(date "+%s")"
 	cnt="0"
 	while IFS= read -r domain; do
 		(
@@ -129,14 +133,16 @@ for feed in ${feeds}; do
 			fi
 		) &
 		hold1="$((cnt % 512))"
-		hold2="$((cnt % 2048))"
+		hold2="$((cnt % 4096))"
 		[ "${hold1}" = "0" ] && sleep 5
 		[ "${hold2}" = "0" ] && wait
 		cnt="$((cnt + 1))"
 	done <"./${input2}"
 	wait
 	error_cnt="$("${awk_tool}" 'END{printf "%d",NR}' "./${input3}" 2>/dev/null)"
-	printf "%s\n" "::: Second run, processed domains: ${cnt}, error domains: ${error_cnt}"
+	feed_end="$(date "+%s")"
+	feed_duration="$(((feed_end - feed_start2) / 60))m $(((feed_end - feed_start2) % 60))s"
+	printf "%s\n" "::: Second run, duration: ${feed_duration}, processed domains: ${cnt}, error domains: ${error_cnt}"
 
 	# sanity re-checks
 	#
@@ -155,7 +161,7 @@ for feed in ${feeds}; do
 	cnt_ipv4="$("${awk_tool}" 'END{printf "%d",NR}' "./${feed_name}-ipv4.txt" 2>/dev/null)"
 	cnt_ipv6="$("${awk_tool}" 'END{printf "%d",NR}' "./${feed_name}-ipv6.txt" 2>/dev/null)"
 	feed_end="$(date "+%s")"
-	feed_duration="$(((feed_end - feed_start) / 60))m $(((feed_end - feed_start) % 60))s"
+	feed_duration="$(((feed_end - feed_start1) / 60))m $(((feed_end - feed_start1) % 60))s"
 	printf "%s\n" "::: Finished processing '${feed_name}', duration: ${feed_duration}, all/unique IPv4: ${cnt_tmpv4}/${cnt_ipv4}, all/unique IPv6: ${cnt_tmpv6}/${cnt_ipv6}"
 done
 
