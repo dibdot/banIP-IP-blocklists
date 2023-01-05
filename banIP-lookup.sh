@@ -19,17 +19,18 @@ upstream1="8.8.8.8"
 upstream2="8.8.8.8"
 input1="input1.txt"
 input2="input2.txt"
+input3="input3.txt"
 update="false"
 
 # sanity pre-checks
 #
-if [ ! -x "${dig_tool}" ] || [ ! -x "${awk_tool}" ] || [ -z "${upstream1}" ]; then
+if [ ! -x "${dig_tool}" ] || [ ! -x "${awk_tool}" ]; then
 	printf "%s\n" "ERR: general pre-check failed"
 	exit 1
 fi
 
 for domain in ${check_domains}; do
-	out="$("${dig_tool}" "@${upstream1}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
+	out="$("${dig_tool}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
 	if [ -z "${out}" ]; then
 		printf "%s\n" "ERR: domain pre-check failed"
 		exit 1
@@ -51,6 +52,7 @@ feeds='yoyo__https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&sho
 for feed in ${feeds}; do
 	: >"./${input1}"
 	: >"./${input2}"
+	: >"./${input3}"
 	: >"./ipv4.tmp"
 	: >"./ipv6.tmp"
 
@@ -68,7 +70,7 @@ for feed in ${feeds}; do
 	cnt="0"
 	while IFS= read -r domain; do
 		(
-			out="$("${dig_tool}" "@${upstream1}" "${domain}" A "${domain}" AAAA +noall +answer +time=10 +tries=1 2>/dev/null)"
+			out="$("${dig_tool}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
 			if [ -n "${out}" ]; then
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then
@@ -86,29 +88,29 @@ for feed in ${feeds}; do
 						fi
 					done
 				else
-				    echo "$domain" >>"./${input2}"
+					echo "$domain" >>"./${input2}"
 				fi
 			fi
 		) &
 		hold1="$((cnt % 512))"
 		hold2="$((cnt % 2048))"
-		[ "${hold1}" = "0" ] && sleep 5
+		[ "${hold1}" = "0" ] && sleep 3
 		[ "${hold2}" = "0" ] && wait
 		cnt="$((cnt + 1))"
 	done <"./${input1}"
 	wait
-	printf "%s\n" "::: First run, processed domains: ${cnt}"
+	error_cnt="$("${awk_tool}" 'END{printf "%d",NR}' "./${input2}" 2>/dev/null)"
+	printf "%s\n" "::: First run, processed domains: ${cnt}, error domains: ${error_cnt}"
 
 	# domain processing (second run)
 	#
 	cnt="0"
 	while IFS= read -r domain; do
 		(
-			out="$("${dig_tool}" "@${upstream2}" "${domain}" A "${domain}" AAAA +noall +answer +time=10 +tries=1 2>/dev/null)"
+			out="$("${dig_tool}" "${domain}" A "${domain}" AAAA +noall +answer +time=5 +tries=1 2>/dev/null)"
 			if [ -n "${out}" ]; then
 				ips="$(printf "%s" "${out}" | "${awk_tool}" '/^.*[[:space:]]+IN[[:space:]]+A{1,4}[[:space:]]+/{printf "%s ",$NF}' 2>/dev/null)"
 				if [ -n "${ips}" ]; then
-					printf "%s\n" "::: ${domain}, success in second run"
 					for ip in ${ips}; do
 						if [ "${ip%%.*}" = "0" ] || [ -z "${ip%%::*}" ] || [ "${ip}" = "1.1.1.1" ] || [ "${ip}" = "8.8.8.8" ]; then
 							continue
@@ -122,17 +124,20 @@ for feed in ${feeds}; do
 							fi
 						fi
 					done
+				else
+					echo "$domain" >>"./${input3}"
 				fi
 			fi
 		) &
 		hold1="$((cnt % 512))"
 		hold2="$((cnt % 2048))"
-		[ "${hold1}" = "0" ] && sleep 5
+		[ "${hold1}" = "0" ] && sleep 3
 		[ "${hold2}" = "0" ] && wait
 		cnt="$((cnt + 1))"
 	done <"./${input2}"
 	wait
-	printf "%s\n" "::: Second run, processed domains: ${cnt}"
+	error_cnt="$("${awk_tool}" 'END{printf "%d",NR}' "./${input3}" 2>/dev/null)"
+	printf "%s\n" "::: Second run, processed domains: ${cnt}, error domains: ${error_cnt}"
 
 	# sanity re-checks
 	#
