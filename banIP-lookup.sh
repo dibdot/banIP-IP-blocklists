@@ -89,7 +89,7 @@ for feed in ${feeds}; do
 						fi
 					done
 				else
-					echo "$domain" >>"./${input2}"
+					printf "%s\n" "$domain" >>"./${input2}"
 				fi
 			fi
 		) &
@@ -129,7 +129,7 @@ for feed in ${feeds}; do
 						fi
 					done
 				else
-					echo "$domain" >>"./${input3}"
+					printf "%s\n" "$domain" >>"./${input3}"
 				fi
 			fi
 		) &
@@ -145,7 +145,7 @@ for feed in ${feeds}; do
 	feed_duration="$(((feed_end - feed_start2) / 60))m $(((feed_end - feed_start2) % 60))s"
 	printf "%s\n" "::: Second run, duration: ${feed_duration}, processed domains: ${cnt}, error domains: ${error_cnt}"
 
-	# sanity re-checks
+	# sanity re-check
 	#
 	if [ ! -s "./ipv4.tmp" ] || [ ! -s "./ipv6.tmp" ]; then
 		printf "%s\n" "ERR: '${feed_name}' re-check failed"
