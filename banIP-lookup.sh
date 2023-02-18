@@ -49,9 +49,9 @@ feeds='yoyo__https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&sho
 	adguard__https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt__BEGIN{FS="[\\|^|\\r]"}/^\|\|([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+[\/\^\\r]+$/{printf"%s\n",tolower($3)}
 	adguardtrackers__https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/combined_disguised_trackers_justdomains.txt__/^([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+([[:space:]]|$)/{printf"%s\n",tolower($1)}
 	antipopads__https://raw.githubusercontent.com/AdroitAdorKhan/antipopads-re/master/formats/domains.txt__/^([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+([[:space:]]|$)/{printf"%s\n",tolower($1)}
-	oisdsmall__https://raw.githubusercontent.com/sjhgvr/oisd/main/oisd_small.txt__BEGIN{FS="[\\|^|\\r]"}/^\|\|([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+[\/\^\\r]+$/{printf"%s\n",tolower($3)}
+	oisdsmall__https://raw.githubusercontent.com/sjhgvr/oisd/main/abp_small.txt__BEGIN{FS="[\\|^|\\r]"}/^\|\|([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+[\/\^\\r]+$/{printf"%s\n",tolower($3)}
 	stevenblack__https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts__/^0\.0\.0\.0[[:space:]]+([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+([[:space:]]|$)/{printf"%s\n",tolower($2)}
-	oisdnsfw__https://raw.githubusercontent.com/sjhgvr/oisd/main/oisd_nsfw.txt__BEGIN{FS="[\\|^|\\r]"}/^\|\|([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+[\/\^\\r]+$/{printf"%s\n",tolower($3)}'
+	oisdnsfw__https://raw.githubusercontent.com/sjhgvr/oisd/main/abp_nsfw.txt__BEGIN{FS="[\\|^|\\r]"}/^\|\|([[:alnum:]_-]{1,63}\.)+[[:alpha:]]+[\/\^\\r]+$/{printf"%s\n",tolower($3)}'
 
 for feed in ${feeds}; do
 	: >"./${input1}"
